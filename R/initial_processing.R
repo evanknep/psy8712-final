@@ -68,6 +68,8 @@ ind_summary_stats <- combined_master %>%
   ) %>%
   arrange(desc(reward_over_chance))
 
+write_csv(ind_summary_stats, "../out/ind_summary.csv")
+
 
 ind_summary_stats %>%
   group_by(group) %>%
