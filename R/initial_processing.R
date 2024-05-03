@@ -42,14 +42,57 @@ combined_master <- combined_master %>% #cleaning up the columns and ensuring the
     key_press == "center" ~ substring(stimulus, 3,4),
     key_press == "right" ~ substring(stimulus, 5,6)
   )) %>%
-  mutate(walkNumber = str_remove(walkNumber, ".csv"))
+  mutate(walkNumber = str_remove(walkNumber, ".csv")) %>%
+  mutate(z_score = scale(rt)) %>%
+  filter(abs(z_score) <= 3) %>%
+  rowwise() %>%
+  mutate(chance = sum(leftProb, midProb, rightProb) / 3)
+  
 
 # write_csv(combined_master, "../out/combined_master.csv") #saving combined master file so I don't need to re-run the pre-processing each time
 
+# combined_master <- read_csv("../out/combined_master.csv") #for importing dataset rather than recreating each time
 
 # Analysis
 
+rt_tbl <- combined_master %>%
+  group_by(group) %>%
+  summarise(
+    avg_rt = mean(rt, na.rm = T),
+    median_rt = median(rt),
+    sd_rt = sd(rt)
+  )
 
-  
+ind_summary_stats <- combined_master %>%
+  group_by(group, subject) %>%
+  summarise(
+    num_trials = n(),
+    num_correct = sum(correct),
+    p_reward = num_correct / num_trials,
+    p_chance = mean(chance),
+    reward_over_chance = p_reward - p_chance
+  ) %>%
+  arrange(desc(reward_over_chance)) %>%
+  View()
+
+# Calculate the distribution of chosen images by group
+choice_distribution <- combined_master %>%
+  group_by(group, key_press) %>%
+  summarise(count = n(), .groups = 'drop') %>%
+  spread(key = key_press, value = count, fill = 0)
 
 
+max(combined_master$rt)
+
+  combined_master %>%
+  select(rt) %>%
+  median()
+
+median(combined_master$rt)
+
+# Visualizations  
+
+combined_master %>%
+  filter(rt <= 5000) %>%
+  ggplot(aes(x=rt)) +
+  geom_histogram()
