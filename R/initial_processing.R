@@ -36,32 +36,23 @@ combined_master <- combined_master %>% #cleaning up the columns and ensuring the
     key_press == "38" ~ "center", 
     key_press == "39" ~ "right"
   )) %>%
-  mutate(stimulus = sub(".*/(.*?)\\.jpg$", "\\1", stimulus)) %>% 
-  mutate(chosen_image = case_when(
+  mutate(stimulus = sub(".*/(.*?)\\.jpg$", "\\1", stimulus)) %>% #pulling out specific stimulus identity from the path to the image file, grabbing the text in between the final / and the .jpg
+  mutate(chosen_image = case_when( # the stimulus file name grabbed in the previous mutate is named by the combination of the 3 images shown to the participant. So the first two characters refer to the left image, the middle two characters refer to the middle image, and the last two characters refer to the right image. I can look at image chosen by pulling those specific characters based on what the keypress was
     key_press == "left" ~ substring(stimulus, 1,2),
     key_press == "center" ~ substring(stimulus, 3,4),
     key_press == "right" ~ substring(stimulus, 5,6)
   )) %>%
-  mutate(walkNumber = str_remove(walkNumber, ".csv")) %>%
-  mutate(z_score = scale(rt)) %>%
-  filter(abs(z_score) <= 3) %>%
+  mutate(walkNumber = str_remove(walkNumber, ".csv")) %>% #participants were given random "walks", that are the potential jumps in reward probability for each option. While they were generated to have the same environmental richness over the course of the task, the different walks could theoretically influence behaviors.
+  mutate(z_score = scale(rt)) %>% #exploratory data analysis revealed some significant outliers in reaction time, because there was no limited hold on each trial. Calculating the z-score of the column and filtering out values above 3 or below -3 allows us to remove rts that are more than 3 standard deviations away from the mean
+  filter(abs(z_score) <= 3) %>% # ^
   rowwise() %>%
-  mutate(chance = sum(leftProb, midProb, rightProb) / 3)
+  mutate(chance = sum(leftProb, midProb, rightProb) / 3) # looking at probability of reward of each participant can provide a skewed sense of performance, because the random component of the task means that different participants will be exposed to difference levels of chance. By calculating the chance each trial and averaging those values per participant (in analysis), we can determine each participants performance above chance
   
 
 # write_csv(combined_master, "../out/combined_master.csv") #saving combined master file so I don't need to re-run the pre-processing each time
 
 # combined_master <- read_csv("../out/combined_master.csv") #for importing dataset rather than recreating each time
 
-# Analysis
-
-rt_tbl <- combined_master %>%
-  group_by(group) %>%
-  summarise(
-    avg_rt = mean(rt, na.rm = T),
-    median_rt = median(rt),
-    sd_rt = sd(rt)
-  )
 
 ind_summary_stats <- combined_master %>%
   group_by(group, subject) %>%
@@ -70,29 +61,41 @@ ind_summary_stats <- combined_master %>%
     num_correct = sum(correct),
     p_reward = num_correct / num_trials,
     p_chance = mean(chance),
-    reward_over_chance = p_reward - p_chance
+    reward_over_chance = p_reward - p_chance,
+    avg_rt = mean(rt, na.rm = T),
+    median_rt = median(rt),
+    sd_rt = sd(rt)
   ) %>%
-  arrange(desc(reward_over_chance)) %>%
+  arrange(desc(reward_over_chance))
+
+
+ind_summary_stats %>%
+  group_by(group) %>%
+  summarise(
+    avg_performance = mean(reward_over_chance),
+    avg_num_trials = mean(num_trials),
+    avg_rt = mean(avg_rt, na.rm = T),
+  ) %>%
   View()
 
 # Calculate the distribution of chosen images by group
 choice_distribution <- combined_master %>%
-  group_by(group, key_press) %>%
-  summarise(count = n(), .groups = 'drop') %>%
-  spread(key = key_press, value = count, fill = 0)
+  group_by(subject) %>%
+  count(key_press) %>%
+  pivot_wider(names_from = key_press, values_from = n) %>%
+  mutate(p_left = left/sum(left,right,center),
+         p_right = right/sum(left,right,center),
+         p_center = center/sum(left,right,center)) %>%
+  mutate(max_choice_bias = max(p_left, p_right, p_center)) %>%
+  select(max_choice_bias, subject)
 
 
-max(combined_master$rt)
+ind_summary_stats <- left_join(ind_summary_stats, choice_distribution)
 
-  combined_master %>%
-  select(rt) %>%
-  median()
 
-median(combined_master$rt)
 
 # Visualizations  
 
-combined_master %>%
-  filter(rt <= 5000) %>%
-  ggplot(aes(x=rt)) +
-  geom_histogram()
+ind_summary_stats %>%
+  ggplot(aes(x=reward_over_chance, fill = group)) +
+  geom_density(position = "stack")
