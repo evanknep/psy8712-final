@@ -4,7 +4,8 @@ library(readr)
 library(dplyr)
 
 # Load the data
-data <- read_csv("ind_summary.csv")
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+data <- readRDS("ind_summary.rds")
 
 # Define the user interface
 ui <- fluidPage(

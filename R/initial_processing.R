@@ -1,7 +1,7 @@
 #Script Settings and Resources
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path)) #setting my current directory as the working directory to avoid weird pathing issues
 library(tidyr) #bringing in our tidy functions but for now hoping to avoid needing the full tidyverse
-
+library(stringr)
 # Data Import and Cleaning
 file_list <- list.files("../data") #my raw data is output as one .csv file per participant. I need to combine all ind files into a mega-file, so first I create a list of all files in the data directory
 file_list <- paste("../data/", file_list, sep = "") #pasting the path information onto the start of the filenames to avoid issues when reading all the files in
@@ -23,11 +23,6 @@ combined_master <- bind_rows(spark_master, rep_master) %>% #combining rep and sp
   filter(test_part == "restless") %>% #each individual trial has a "test_part" value associated with it, the rows that contain NA here are only saving server info in between trials so we can filter them out. In the spark sample we only used the restless bandit task, so we can filter out all the NA by only including rows that contain a restless value in the test_part column.
   select(-c(trial_type, trial_index, time_elapsed, internal_node_id, participantCode, success, test_part, generatedNum)) #removing irrelevant columns. Some of it is server info from Pavlovia.org, some it is simply redundant information that we've used for organizing files
   
-
-# write_csv(spark_master, "../out/spark_master.csv") #writing these to csvs to avoid needing to do the pre-processing each time
-# write_csv(rep_master, "../out/rep_master.csv") #writing these to csvs to avoid needing to do the pre-processing each time
-
-
 combined_master <- combined_master %>% #cleaning up the columns and ensuring the datatypes are correct
   mutate(group = factor(group, ordered = FALSE)) %>% #factorizing my group variable, initially it was being treated as just a string 
   mutate(rt = as.numeric(rt)) %>% #changing my reaction time values to numeric
@@ -49,10 +44,6 @@ combined_master <- combined_master %>% #cleaning up the columns and ensuring the
   mutate(chance = sum(leftProb, midProb, rightProb) / 3) # looking at probability of reward of each participant can provide a skewed sense of performance, because the random component of the task means that different participants will be exposed to difference levels of chance. By calculating the chance each trial and averaging those values per participant (in analysis), we can determine each participants performance above chance
   
 
-# write_csv(combined_master, "../out/combined_master.csv") #saving combined master file so I don't need to re-run the pre-processing each time
-
-# combined_master <- read_csv("../out/combined_master.csv") #for importing dataset rather than recreating each time
-
 
 ind_summary_stats <- combined_master %>%
   group_by(group, subject) %>%
@@ -68,7 +59,7 @@ ind_summary_stats <- combined_master %>%
   ) %>%
   arrange(desc(reward_over_chance))
 
-write_csv(ind_summary_stats, "../out/ind_summary.csv")
+
 
 
 ind_summary_stats %>%
@@ -92,7 +83,22 @@ choice_distribution <- combined_master %>%
   select(max_choice_bias, subject)
 
 
-ind_summary_stats <- left_join(ind_summary_stats, choice_distribution)
+ind_summary_stats <- left_join(ind_summary_stats, choice_distribution) %>%
+  select(-subject, -num_trials) 
+
+saveRDS(ind_summary_stats, "../shiny/ind_summary.rds")
+
+# ML component
+library(caret)
+library(parallel)
+library(doParallel)
+
+holdout_indices <- createDataPartition(gss_tbl$MOSTHRS,
+                                       p = .25,
+                                       list = T)$Resample1
+
+
+
 
 
 
