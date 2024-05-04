@@ -151,7 +151,7 @@ make_it_pretty <- function (formatme) {
   formatme <- str_remove(formatme, "^0")
   return(formatme)}
 
-table1_tbl <- tibble(
+ml_results_tbl <- tibble(
   algo <- c("GLM", "Naive Bayes", "K Nearest Neighbor"),
   training_accuracy = c(make_it_pretty(glm_training_accuracy), 
              make_it_pretty(nb_training_accuracy), 
@@ -162,5 +162,5 @@ table1_tbl <- tibble(
     make_it_pretty(knn_test_accuracy)
   )
 )
-table1_tbl
+
 
