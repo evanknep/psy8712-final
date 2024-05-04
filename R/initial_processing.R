@@ -77,7 +77,7 @@ ind_summary_stats <- left_join(ind_summary_stats, choice_distribution) %>% #usin
 # saveRDS(ind_summary_stats, "../shiny/ind_summary.rds") #saving to RDS for shiny app
 # write_csv(ind_summary_stats, "../out/summary_stats.csv") #for our .doc visualizations
 
-# ML component
+# Analysis
 
 holdout_indices <- createDataPartition(ind_summary_stats$group, #using createDataPartition to create our train/test split partitions. In this case I've decided to holdout 25% of the dataset as our testset
                                        p = .25,
@@ -110,35 +110,57 @@ glm_test_predictions <- predict(m_glm, test_tbl) #running our trained glm model 
 glm_test_accuracy <- sum(glm_test_predictions == test_tbl$group) / length(test_tbl$group) #comparing our predicted classes from our test set to actual classes
 
 
-m_rf <- train( #running a second model using random forest
+m_nb <- train( #running a second model using random forest
   group ~ ., #again trying to predict group based on all other variables
   training_tbl, #using only training data
-  method = "ranger", #using ranger for random forest, which is a great algorithm for unpacking complex relationships, and particularly should perform better than our glm if the relationship is nonlinear.
+  method = "naive_bayes", #using ranger for random forest, which is a great algorithm for unpacking complex relationships, and particularly should perform better than our glm if the relationship is nonlinear.
   preProcess = c("center","scale", "nzv", "medianImpute"), #we can use caret's built in preprocessing steps before training our model. Center subtracts the mean of each variable from each value, bringing all of our features onto a similar scale. Scale continues this process by then dividing each value by the sd. We are essentially z-scoring our data in these first two steps. NZV stands for near zero variance, and it removes columns that have near zero variance as they will provide no real value as a predictor. Removing these features can increase training speed and simplify the output. medianImpute is my chosen method of handling missing values. Missing data will be replaced with the median value from that feature.
   na.action = na.pass, #our chosen method of na handling, indicating that we are passing them on to the algorithm as is
   trControl = training_control)  #using our predefined trainControl to specify how we want our model to run
 
-rf_train_predictions <- predict(m_rf, training_tbl) #running our trained model on our training set to determine training accuracy
-rf_training_accuracy <- sum(rf_train_predictions == training_tbl$group) / length(training_tbl$group) #comparing our predicted classes from our training set to actual classes
+nb_train_predictions <- predict(m_nb, training_tbl) #running our trained model on our training set to determine training accuracy
+nb_training_accuracy <- sum(nb_train_predictions == training_tbl$group) / length(training_tbl$group) #comparing our predicted classes from our training set to actual classes
 
-rf_test_predictions <- predict(m_rf, test_tbl) #running our trained rf model on our test set to determine test accuracy
-rf_test_accuracy <- sum(rf_test_predictions == test_tbl$group) / length(test_tbl$group) #comparing our predicted classes from our test set to actual classes
+nb_test_predictions <- predict(m_nb, test_tbl) #running our trained rf model on our test set to determine test accuracy
+nb_test_accuracy <- sum(nb_test_predictions == test_tbl$group) / length(test_tbl$group) #comparing our predicted classes from our test set to actual classes
 
 
-m_xgb <- train( #running a third model using xgboost
+
+
+m_knn <- train( #running a third model using xgboost
   group ~ ., #again trying to predict group based on all other variables
   training_tbl, #using only training data
-  method = "xgbTree", #xgboost is great for handling complex relationships in data, both linear and nonlinear. It will be a great indicator of if there are actually predictable group differences in our dataset
+  method = "kknn", #xgboost is great for handling complex relationships in data, both linear and nonlinear. It will be a great indicator of if there are actually predictable group differences in our dataset
   preProcess = c("center","scale", "nzv", "medianImpute"),  #we can use caret's built in preprocessing steps before training our model. Center subtracts the mean of each variable from each value, bringing all of our features onto a similar scale. Scale continues this process by then dividing each value by the sd. We are essentially z-scoring our data in these first two steps. NZV stands for near zero variance, and it removes columns that have near zero variance as they will provide no real value as a predictor. Removing these features can increase training speed and simplify the output. medianImpute is my chosen method of handling missing values. Missing data will be replaced with the median value from that feature.
   na.action = na.pass, #our chosen method of na handling, indicating that we are passing them on to the algorithm as is
   trControl = training_control)  #using our predefined trainControl to specify how we want our model to run
 
-xgb_train_predictions <- predict(m_xgb, training_tbl) #running our trained model on our training set to determine training accuracy
-xgb_training_accuracy <- sum(xgb_train_predictions == training_tbl$group) / length(training_tbl$group) #comparing our predicted classes from our training set to actual classes
+knn_train_predictions <- predict(m_knn, training_tbl) #running our trained model on our training set to determine training accuracy
+knn_training_accuracy <- sum(knn_train_predictions == training_tbl$group) / length(training_tbl$group) #comparing our predicted classes from our training set to actual classes
 
-xgb_test_predictions <- predict(m_xgb, test_tbl) #running our trained model on our test set to determine test accuracy
-xgb_test_accuracy <- sum(xgb_test_predictions == test_tbl$group) / length(test_tbl$group) #comparing our predicted classes from our test set to actual classes
+knn_test_predictions <- predict(m_knn, test_tbl) #running our trained model on our test set to determine test accuracy
+knn_test_accuracy <- sum(knn_test_predictions == test_tbl$group) / length(test_tbl$group) #comparing our predicted classes from our test set to actual classes
 
 
 # Visualizations 
+
+
+# Publication
+make_it_pretty <- function (formatme) {
+  formatme <- formatC(formatme, format = "f", digits = 2)
+  formatme <- str_remove(formatme, "^0")
+  return(formatme)}
+
+table1_tbl <- tibble(
+  algo <- c("GLM", "Naive Bayes", "K Nearest Neighbor"),
+  training_accuracy = c(make_it_pretty(glm_training_accuracy), 
+             make_it_pretty(nb_training_accuracy), 
+             make_it_pretty(knn_training_accuracy)),
+  test_accuracy = c(
+    make_it_pretty(glm_test_accuracy),
+    make_it_pretty(nb_test_accuracy),
+    make_it_pretty(knn_test_accuracy)
+  )
+)
+table1_tbl
 
