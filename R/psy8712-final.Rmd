@@ -1,0 +1,28 @@
+---
+title: "The Impact of Autism Spectrum Disorder On A Restless Bandit Task"
+author: "Evan Knep"
+date: "2024-05-04"
+output: word_document
+---
+
+# **Reproducible Image and Online Resources**
+
+<!-- An image of this project as of *`r Sys.Date()`* can be accessed by [clicking this link](https://mybinder.org/v2/gh/evanknep/psy8712-week8/HEAD).  -->
+
+
+An interactive web app is available by [clicking this link](https://knepx001.shinyapps.io/psy8712-final/) instead. 
+
+
+# **Script Settings and Resources**
+```{r script settings, echo=TRUE, results='hide', message=FALSE}
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+library(dplyr)
+library(stringr)
+```
+
+
+# **Data Import and Cleaning**
+```{r data wrangling}
+
+
+```

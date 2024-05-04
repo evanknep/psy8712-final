@@ -4,7 +4,7 @@ library(readr)
 library(dplyr)
 
 # Load the data
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+# setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 data <- readRDS("ind_summary.rds")
 
 # Define the user interface
