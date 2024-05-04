@@ -90,17 +90,73 @@ saveRDS(ind_summary_stats, "../shiny/ind_summary.rds")
 
 # ML component
 library(caret)
-library(parallel)
-library(doParallel)
 
-holdout_indices <- createDataPartition(gss_tbl$MOSTHRS,
+
+holdout_indices <- createDataPartition(ind_summary_stats$group,
                                        p = .25,
                                        list = T)$Resample1
+training_tbl <- ind_summary_stats[-holdout_indices,]
+test_tbl <- ind_summary_stats[holdout_indices,]
+
+training_folds <- createFolds(training_tbl$group) #for cross validation, we can bootstrap our training set to hopefully provide better performance without overfitting
 
 
+m_glm <- train(
+  group ~ ., 
+  training_tbl,
+  method = "glmnet",
+  preProcess = c("center","scale", "nzv", "medianImpute"),
+  na.action = na.pass,
+  trControl = trainControl(method = "cv",
+                           number = 10,
+                           indexOut = training_folds,
+                           verboseIter = TRUE,
+                           savePredictions = TRUE))
+
+glm_train_predictions <- predict(m_glm, training_tbl)
 
 
+glm_training_accuracy <- sum(glm_train_predictions == training_tbl$group) / length(training_tbl$group)
 
+glm_test_predictions <- predict(m_glm, test_tbl)
+glm_test_accuracy <- sum(glm_test_predictions == test_tbl$group) / length(test_tbl$group)
+
+
+m_rf <- train(
+  group ~ ., 
+  training_tbl,
+  method = "ranger",
+  preProcess = c("center","scale", "nzv", "medianImpute"),
+  na.action = na.pass,
+  trControl = trainControl(method = "cv",
+                           number = 10,
+                           indexOut = training_folds,
+                           verboseIter = TRUE,
+                           savePredictions = TRUE))
+
+rf_train_predictions <- predict(m_rf, training_tbl)
+rf_training_accuracy <- sum(rf_train_predictions == training_tbl$group) / length(training_tbl$group)
+
+rf_test_predictions <- predict(m_rf, test_tbl)
+rf_test_accuracy <- sum(rf_test_predictions == test_tbl$group) / length(test_tbl$group)
+
+
+m_xgb <- train(
+  group ~ ., 
+  training_tbl,
+  method = "xgbTree",
+  preProcess = c("center","scale", "nzv", "medianImpute"),
+  na.action = na.pass,
+  trControl = trainControl(method = "cv",
+                           number = 10,
+                           indexOut = training_folds,
+                           verboseIter = TRUE,
+                           savePredictions = TRUE))
+xgb_train_predictions <- predict(m_xgb, training_tbl)
+xgb_training_accuracy <- sum(xgb_train_predictions == training_tbl$group) / length(training_tbl$group)
+
+xgb_test_predictions <- predict(m_xgb, test_tbl)
+xgb_test_accuracy <- sum(xgb_test_predictions == test_tbl$group) / length(test_tbl$group)
 
 # Visualizations  
 
