@@ -6,4 +6,4 @@ The out folder contains an .Rmd file that was used to create the final.docx outp
 
 The interactive shiny web app can be found here: https://knepx001.shinyapps.io/psy8712-final/
 
-An online web-binder of this project can be found here:
+An online web-binder of this project can be found here: 
