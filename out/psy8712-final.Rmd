@@ -1,10 +1,11 @@
 ---
 title: "The Impact of Autism Spectrum Disorder On A Restless Bandit Task"
 author: "Evan Knep"
-date: "2024-05-04"
+date: 2024-05-04 
 output: word_document
 fontsize : 12
 documentClass : report
+#I could not figure out how to work in the class name"
 ---
 
 ```{r script settings, echo=FALSE, results='hide', message=FALSE}
@@ -14,8 +15,10 @@ library(stringr)
 library(readr)
 library(ggplot2)
 library(GGally)
+library(knitr)
+library(kableExtra)
 
-group_tbl <- read_csv("group_stats_tbl.csv")
+#Data Import
 ml_results <- read_csv("ml_results.csv")
 summary_stats <- read_csv("summary_stats.csv")
 ```
@@ -61,30 +64,82 @@ Participants were asked to complete a restless bandit task, in which they must s
 ### **Descriptive Statistics and Static Visualizations**
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-# Display basic summary statistics
-# summary_stats %>%
-#   group_by(group) %>%
-#   summarise(
-#     
-#   )
-summary_stats %>%
-  select(-group) %>%
-  ggpairs()
-
-
+summary_stats %>% #using a pairplot to visualize distributions and relationships between numeric variables
+  select(-group) %>% #only want numeric variables
+  ggpairs() 
 ```
 
 ### **Interactive Visualization**
+
 An interactive web app is available by [clicking this link](https://knepx001.shinyapps.io/psy8712-final/). The interactive component allows the reader to view the distribution of each feature by group, as well as the correlation between variables separated by group. Additional measures for reaction time for viewers to access.
 
 ### **Data Cleaning**
 
+The data cleaning procedure for this project required taking individual trial by trial files for each participant. Files were combined into master files separated by group before being combined into one superfile with all participants. Results were filtered to include on trial relevant information, and then grouped by participant to calculate summary statistics for each participant rather than retaining trial by trial information. The resulting dataset containing one row for each participant was then used for data analysis and visualization.
+
 ### **Analysis**
+
+**H1. Individuals on the Autism Spectrum Will Exhibit Decreased Choice Distribution Compared to Control**
+
+```{r H1, warning=FALSE, echo=FALSE}
+summary_stats %>% #taking our imported summary stats to create some in text visualizations
+  group_by(group) %>% #focusing on group differences in these hypotheses
+  ggplot(aes(x=group, y=max_choice_bias, fill=group)) + #plotting by group and max choice bias, with the fill as group to make it pop a bit more visually
+  geom_boxplot(outliers = F) + #boxplot is a good way to compare these group differences, I ended up setting outliers to F because there were a couple of participants close to 1.0 choice bias and it was squeezing the rest of the boxplots down into the bottom section of the graph. 
+  labs(title = "Choice Bias By Group") + 
+  theme(plot.title = element_text(hjust = 0.5)) #to center the title
+
+bias_t_test <- t.test(max_choice_bias ~ group, data = summary_stats, var.equal = TRUE) #running our independent samples t-test to determine if there is a significant differnce between groups
+
+```
+
+When comparing maximum choice bias between our spark (ASD) and rep (general population) participants, we find that there is not a significant difference between the two groups t(322) = `r bias_t_test$statistic`, p = `r bias_t_test$p.value`. This suggests that contrary to what we hypothesized, Autism associated stereotypies are not translating to the bandit task.
+
+**H2. Individuals on the Autism Spectrum Will Exhibit Faster Reaction Times Compared to Control**
+
+```{r H2, warning=FALSE, echo=FALSE}
+summary_stats %>% #taking our imported summary stats to create some in text visualizations
+  group_by(group) %>% # again focusing on group differences in these hypotheses
+  ggplot(aes(x=group, y=avg_rt, fill=group)) + #plotting by group and average rt this time, with the fill as group to make it pop a bit more visually
+  geom_boxplot(outliers = F) + #boxplot is a good way to compare these group differences, I ended up setting outliers to F because there were a couple of participants close to 1.0 choice bias and it was squeezing the rest of the boxplots down into the bottom section of the graph. 
+  labs(title = "Average Reaction Time By Group") + 
+  theme(plot.title = element_text(hjust = 0.5)) #to center the title
+
+rt_t_test <- t.test(avg_rt ~ group, data = summary_stats, var.equal = TRUE) #running our independent samples t-test to determine if there is a significant difference between groups
+
+
+```
+
+When comparing average reaction times between our spark and rep participants, we find that there is a significant difference between the two groups t(322) = `r rt_t_test$statistic`, p = `r rt_t_test$p.value`. This suggests that as we hypothesized, individuals on the Autism spectrum are in fact committing to a choice more quickly. This has interesting implications considering we did not see a group difference in choice bias, suggesting that they are not choosing more quickly as a result of sticking to a single choice.
+
+**H3. Individuals on the Autism Spectrum Will Exhibit Worse Performance Compared to Control**
+
+```{r H3, warning=FALSE, echo=FALSE}
+summary_stats %>% #taking our imported summary stats to create some in text visualizations
+  group_by(group) %>% # again focusing on group differences in these hypotheses
+  ggplot(aes(x=group, y=reward_over_chance, fill=group)) + #plotting by group and reward over chance this time, with the fill as group to make it pop a bit more visually
+  geom_boxplot(outliers = F) + #boxplot is a good way to compare these group differences, I ended up setting outliers to F because there were a couple of participants close to 1.0 choice bias and it was squeezing the rest of the boxplots down into the bottom section of the graph. 
+  labs(title = "Task Performance By Group") + 
+  theme(plot.title = element_text(hjust = 0.5)) #to center the title
+
+performance_t_test <- t.test(avg_rt ~ group, data = summary_stats, var.equal = TRUE) #running our independent samples t-test to determine if there is a significant difference between groups
+
+
+```
+
+When comparing reward over chance, an analog for task performance, between our spark and rep participants, we find that there is a significant difference between the two groups t(322) = `r performance_t_test$statistic`, p = `r performance_t_test$p.value`. This suggests that are hypothesis is incorrect, and in fact individuals on the Autism spectrum are performing better than those in the general population.
+
+**H4. Classification Algorithms Will Be Able To Differentiate Between Participants on The Autism Spectrum and General Population Based on Behavioral metrics**
+
+```{r H4, warning=FALSE, echo=FALSE}
+
+ml_results %>% #we've already imported our ml results from our initial processing final, so just piping it into kable for a cleaner output that is also word doc friendly
+  kable()
+
+```
+
+When examining classification performance across three different machine learning algorithms, we see that while imperfect, all three are able to predict participant group above chance. This suggests that when observing task behavior in the form of reward over chance, reaction time, and choice bias, there are distinct behavior profiles within those on the Autism spectrum and the general population, and that we may be able to predict bandit task behaviors based on diagnoses.
 
 # **Reflection**
 
-# **Reproducible Image and Online Resources**
-
-<!-- An image of this project as of *`r Sys.Date()`* can be accessed by [clicking this link](https://mybinder.org/v2/gh/evanknep/psy8712-week8/HEAD).  -->
-
-An interactive web app is available by [clicking this link](https://knepx001.shinyapps.io/psy8712-final/) instead.
+I've learned a great this semester and really enjoyed the course. I often didn't have as much time as I would've liked to dedicate to experimenting with what we learned, but I anticipate doing so quite a bit in the coming months. I had very little experience in R, and plenty of bad practices from years of self-taught python. Learning in this sort of structured course environment, and this style of DataCamp lessons at home and troubleshooting/lecture in class, was really valuable. There are still plenty of concepts that I don't fully understand beyond basic implementation, and I don't doubt that there will be some best practice issues present in this final project, but overall I think the re-learning approach with better habits has been a great experience. If I had to pick one thing that I think I will be implementing the most, it would actually be piping. Such a clean way to sequentially process data, I've been looking for python alternatives but so far nothing quite compares. Thanks for a great semester!

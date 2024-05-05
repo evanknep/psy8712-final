@@ -150,6 +150,17 @@ make_it_pretty <- function (formatme) { #reproducing a function from early this 
   formatme <- str_remove(formatme, "^0")
   return(formatme)}
 
+#H1 Individuals on the Autism Spectrum Will Exhibit Decreased Choice Distribution Compared to Control
+
+bias_by_group <- summary_stats %>%
+  group_by(group) %>%
+  ggplot(aes(x=group, y=max_choice_bias, fill=group)) +
+  geom_boxplot(outliers = F)
+bias_by_group
+
+bias_t_test <- t.test(max_choice_bias ~ group, data = summary_stats, var.equal = TRUE)
+
+
 
 summary_stats <- ind_summary_stats %>%
   group_by(group) %>%
