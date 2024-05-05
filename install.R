@@ -1,0 +1,8 @@
+install.packages("readr")
+install.packages("tidyr")
+install.packages("caret")
+install.packages("stringr")
+install.packages("ggplot2")
+install.packages("GGally")
+install.packages("knitr")
+install.packages("kableExtra")
