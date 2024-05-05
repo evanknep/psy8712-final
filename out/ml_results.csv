@@ -1,0 +1,4 @@
+algo,training_accuracy,test_accuracy
+               GLM,.69,.67
+       Naive Bayes,.71,.70
+K Nearest Neighbor,.76,.68

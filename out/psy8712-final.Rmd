@@ -1,0 +1,90 @@
+---
+title: "The Impact of Autism Spectrum Disorder On A Restless Bandit Task"
+author: "Evan Knep"
+date: "2024-05-04"
+output: word_document
+fontsize : 12
+documentClass : report
+---
+
+```{r script settings, echo=FALSE, results='hide', message=FALSE}
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+library(dplyr)
+library(stringr)
+library(readr)
+library(ggplot2)
+library(GGally)
+
+group_tbl <- read_csv("group_stats_tbl.csv")
+ml_results <- read_csv("ml_results.csv")
+summary_stats <- read_csv("summary_stats.csv")
+```
+
+\newpage
+
+# **The Impact of Autism Spectrum Disorder On A Restless Bandit Task**
+
+This research project aims to explore behavioral differences between individuals on the autism spectrum and the general population as they engage in an online restless bandit task. Prior research suggests that individuals with Autism Spectrum Disorder (ASD) may exhibit unique cognitive processing patterns that could influence their decision-making in such tasks. In particular, individuals on the spectrum possess rigid behaviors and stereotypies that may cause challenges in a task with high uncertainty. By comparing performance metrics such as average reward, reaction times, and choice biases between the two groups, this study seeks to identify distinct decision-making patterns that could shed light on the cognitive processes underlying ASD.
+
+## **Hypothesis and Research Questions**
+
+1.  Individuals on the Autism Spectrum Will Exhibit Decreased Choice Distribution Compared to Control
+2.  Individuals on the Autism Spectrum Will Exhibit Faster Reaction Times Compared to Control
+3.  Individuals on the Autism Spectrum Will Exhibit Worse Performance Compared to Control
+4.  Classification Algorithms Will Be Able To Differentiate Between Participants on The Autism Spectrum and General Population Based on Behavioral metrics
+
+# Method
+
+### **Open Science Materials**
+
+### **Participants**
+
+Participants were collected in two rounds. Undergraduate students participating in psyREP opportunities took part in an online restless bandit task in the fall of 2023. Autism Spectrum Individuals were collected in collaboration with Simons Powering Autism Research (SPARK), and took part in an online restless bandit task in the Spring of 2024. Both rounds of data collection were administered via Pavlovia.org
+
+### **Measures**
+
+-   num_correct: The number of trials in which each participant was rewarded
+-   p_reward: The percentage of total trials that each participant was rewarded on
+-   p_chance: The chance level of each participants individual "walk" (the random nature of the task means that each participant will experience a slightly different version of the task)
+-   reward_over_chance: p_reward - p_chance, or how much more often each participant was rewarded than if they sampled randomly. A measure of performance per participant
+-   avg_rt: average reaction time to make a decision once stimuli are presented
+-   median_rt: median reaction time to make a decision once stimuli are presented
+-   sd_rt: standard deviation of decision time
+-   max_choice_bias: The percentage of the trials in which each participant selected their most chosen option. An analog for behavioral stickiness and/or task engagement
+
+### **Procedure**
+
+Participants were asked to complete a restless bandit task, in which they must select one of 3 images each trial. Each image is associated with a probability of reward that change randomly and independently over time. The only way for participants to determine the reward probability of a given option is to sample the environment.
+
+# **Analyses**
+
+### **Descriptive Statistics and Static Visualizations**
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+# Display basic summary statistics
+# summary_stats %>%
+#   group_by(group) %>%
+#   summarise(
+#     
+#   )
+summary_stats %>%
+  select(-group) %>%
+  ggpairs()
+
+
+```
+
+### **Interactive Visualization**
+An interactive web app is available by [clicking this link](https://knepx001.shinyapps.io/psy8712-final/). The interactive component allows the reader to view the distribution of each feature by group, as well as the correlation between variables separated by group. Additional measures for reaction time for viewers to access.
+
+### **Data Cleaning**
+
+### **Analysis**
+
+# **Reflection**
+
+# **Reproducible Image and Online Resources**
+
+<!-- An image of this project as of *`r Sys.Date()`* can be accessed by [clicking this link](https://mybinder.org/v2/gh/evanknep/psy8712-week8/HEAD).  -->
+
+An interactive web app is available by [clicking this link](https://knepx001.shinyapps.io/psy8712-final/) instead.

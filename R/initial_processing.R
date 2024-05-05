@@ -72,10 +72,10 @@ choice_distribution <- combined_master %>% # Calculating the distribution of cho
   select(max_choice_bias, subject) #taking our max choice bias calculation and subject columns to join with our main ind_summary database
 
 ind_summary_stats <- left_join(ind_summary_stats, choice_distribution) %>% #using left join to join our smaller choice_distribution dataframe onto our main ind_summary_stats dataframe. Because of my initial cleaning above left,right, or inner join should produce identical results, but I've chosen left_join because in most cases where I am appending to a main dataframe I would only want the choice_distribution values for participants that are also in my main file
-  select(-subject, -num_trials) #removing unnecessary columns
+  select(group, reward_over_chance, avg_rt, max_choice_bias) #removing unnecessary columns
 
 # saveRDS(ind_summary_stats, "../shiny/ind_summary.rds") #saving to RDS for shiny app
-# write_csv(ind_summary_stats, "../out/summary_stats.csv") #for our .doc visualizations
+write_csv(ind_summary_stats, "../out/summary_stats.csv") #for our .doc visualizations
 
 # Analysis
 
@@ -142,25 +142,41 @@ knn_test_predictions <- predict(m_knn, test_tbl) #running our trained model on o
 knn_test_accuracy <- sum(knn_test_predictions == test_tbl$group) / length(test_tbl$group) #comparing our predicted classes from our test set to actual classes
 
 
-# Visualizations 
-
 
 # Publication
-make_it_pretty <- function (formatme) {
+
+make_it_pretty <- function (formatme) { #reproducing a function from early this semester that cleans up our output for publication. Removes leading zeros and limits the number of sig figs following the decimal to 2
   formatme <- formatC(formatme, format = "f", digits = 2)
   formatme <- str_remove(formatme, "^0")
   return(formatme)}
 
-ml_results_tbl <- tibble(
-  algo <- c("GLM", "Naive Bayes", "K Nearest Neighbor"),
-  training_accuracy = c(make_it_pretty(glm_training_accuracy), 
-             make_it_pretty(nb_training_accuracy), 
-             make_it_pretty(knn_training_accuracy)),
+
+summary_stats <- ind_summary_stats %>%
+  group_by(group) %>%
+  summarise(
+    avg_performance = (mean(reward_over_chance)),
+    avg_rt = mean(avg_rt),
+    freq_of_most_chosen_option = mean(max_choice_bias, na.rm = T)
+  ) %>%
+  mutate(across(.cols = -group, .fns = make_it_pretty)) 
+
+# write_csv(summary_stats, "../out/group_stats_tbl.csv")
+
+ml_results_tbl <- tibble( #creating a table to present the training and test accuracy of my models
+  algo = c("GLM", "Naive Bayes", "K Nearest Neighbor"),
+  training_accuracy = c((glm_training_accuracy), 
+             (nb_training_accuracy), 
+             (knn_training_accuracy)),
   test_accuracy = c(
-    make_it_pretty(glm_test_accuracy),
-    make_it_pretty(nb_test_accuracy),
-    make_it_pretty(knn_test_accuracy)
+    (glm_test_accuracy),
+    (nb_test_accuracy),
+    (knn_test_accuracy)
   )
-)
+) %>%
+  mutate(across(.cols = everything(), .fns = make_it_pretty)) 
+
+# write_csv(ml_results_tbl, "../out/ml_results.csv")
+
+
 
 

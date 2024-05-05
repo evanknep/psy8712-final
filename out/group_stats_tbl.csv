@@ -1,0 +1,3 @@
+group,avg_performance,avg_rt,freq_of_most_chosen_option
+rep,.03,977.72,.44
+spark,.04,571.98,.45
